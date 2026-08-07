@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono&display=swap" rel="stylesheet" />
+    <title>Ghost — The Personal AI Computer</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage">
+        <div id="gradient-wash" aria-hidden="true"></div>
+        <img id="scanlines" src="/assets/frame-lines.svg" alt="" aria-hidden="true" />
+
+        <!-- Loading veil: solid dark-gray cover whose own alpha mask fades it
+             out from the bottom up — a soft gradient boundary sliding through
+             it (via mask-position), not a solid block physically sliding
+             off-screen — so the reveal reads as a gentle illumination growing
+             upward rather than a hard-edged wipe. Removed from the DOM
+             entirely once the animation ends (see main.js) so it can't block
+             input or linger as dead weight. -->
+        <div id="loading-veil" aria-hidden="true"></div>
+
+        <!-- Shared wordmark: ONE persistent element reused across all three
+             pages (not three separate copies), so switching pages animates
+             its position/scale smoothly via a single CSS transition on
+             transform (see .wordmark in style.css and updateWordmarkTransform
+             in main.js) instead of cross-fading between disconnected
+             instances. Doubles as a link back to the landing page. -->
+        <a href="#" id="wordmark" class="wordmark" data-action="home" aria-label="Ghost — go to homepage">
+          <div class="wordmark-inner">
+            <img class="logo-host" src="/assets/host.svg" alt="" />
+            <img class="logo-o" src="/assets/o.svg" alt="" />
+            <img class="logo-underline" src="/assets/underline.svg" alt="" />
+          </div>
+        </a>
+
+        <!-- Page 1: hero wordmark -->
+        <section class="page page-1 is-active" data-page="1" aria-hidden="false">
+          <nav class="side-nav" aria-label="Site">
+            <a href="#" class="nav-mark" data-action="home" aria-label="Ghost — go to homepage"></a>
+            <a href="#" class="nav-link active">ghost</a>
+            <a href="#" class="nav-link">things</a>
+            <a href="#" class="nav-link">team</a>
+          </nav>
+
+          <div class="tagline">
+            <p>the personal</p>
+            <p>ai computer</p>
+          </div>
+
+          <div class="cta">
+            <span class="cta-label">press</span>
+            <kbd class="return-key" data-action="continue">return</kbd>
+            <span class="cta-label">to continue</span>
+          </div>
+        </section>
+
+        <!-- Page 2: builds computers -->
+        <section class="page page-2" data-page="2" aria-hidden="true">
+          <nav class="side-nav" aria-label="Site">
+            <a href="#" class="nav-mark" data-action="home" aria-label="Ghost — go to homepage"></a>
+            <a href="#" class="nav-link active">ghost</a>
+            <a href="#" class="nav-link">product</a>
+            <a href="#" class="nav-link">things</a>
+            <a href="#" class="nav-link">team</a>
+          </nav>
+
+          <div class="tagline">
+            <p>the personal</p>
+            <p>ai computer</p>
+          </div>
+
+          <div class="hero-center">
+            <div class="headline" id="page2-headline">
+              <p class="headline-line">builds</p>
+              <p class="headline-line">computers.</p>
+            </div>
+          </div>
+
+          <div class="cta">
+            <span class="cta-label">press</span>
+            <kbd class="return-key" data-action="continue">return</kbd>
+            <span class="cta-label">to continue</span>
+          </div>
+        </section>
+
+        <!-- Page 3: system 001 manifesto -->
+        <section class="page page-3" data-page="3" aria-hidden="true">
+          <nav class="side-nav" aria-label="Site">
+            <a href="#" class="nav-mark" data-action="home" aria-label="Ghost — go to homepage"></a>
+            <a href="#" class="nav-link active">ghost</a>
+            <a href="#" class="nav-link">product</a>
+            <a href="#" class="nav-link">things</a>
+            <a href="#" class="nav-link">team</a>
+          </nav>
+
+          <div class="tagline">
+            <p>the personal</p>
+            <p>ai computer</p>
+          </div>
+
+          <div class="document-scroll">
+            <div class="document-track">
+              <article class="system-panel">
+                <header class="system-header">
+                  <p class="system-id">SYSTEM 001</p>
+                  <img class="system-dots" src="/assets/system-dots.svg" alt="" width="100" height="20" />
+                </header>
+
+                <div class="system-meta">
+                  <p>hardware / software</p>
+                  <p>[1943 - 2026]</p>
+                </div>
+
+                <div class="system-body">
+                  <div class="system-visuals">
+                    <div class="system-markers" aria-hidden="true">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <img class="illustration illustration-mainframe" src="/assets/computer-mainframe.svg" alt="" />
+                    <img class="illustration illustration-desktop" src="/assets/computer-desktop.svg" alt="" />
+                    <img class="illustration illustration-modern" src="/assets/computer-modern.svg" alt="" />
+                    <img class="illustration illustration-laptop" src="/assets/computer-laptop.svg" alt="" />
+                  </div>
+
+                  <div class="system-copy">
+                    <p>Ghost builds computers.</p>
+                    <p>For forty years, computers have worked the same way. You click, you type, you navigate through apps and menus and windows, and the machine does exactly what you tell it and nothing more. Every computer ever made has been a static machine waiting for its next instruction.</p>
+                    <p>Now, with AI, computers will come alive. Every machine will have a ghost in it, an agent with full control of the computer at every level, from the hardware to the operating system to the software.</p>
+                    <p>These agents will do incredible things. Yours will reason locally over every data point in your entire life: the emails in your inbox, the files in your drive, your calendar, your health data, your finances, the cameras you connect, the conversations you have. Your computer will work 24/7 as anything you ask it to be: your executive assistant, your health coach, your therapist.</p>
+                    <p>Eventually, an entire ecosystem of devices will be built around these agents. They will see through the cameras you connect, control the lights and appliances in your home, and follow you through your day. Anything you want done, in software or in the world around you, will begin with a sentence. And the intelligence making it possible will be entirely your own.</p>
+                    <p>AI will make your life unimaginably good. It all starts with computers.</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="page-footer-outer">
+              <div class="page-footer-shell">
+                <section class="page-footer" aria-label="Footer">
+                  <div class="page-footer-bg" aria-hidden="true">
+                    <img src="/assets/footer-metal.png" alt="" width="1572" height="1049" />
+                  </div>
+                  <div class="page-footer-content">
+                    <div class="page-footer-bars" aria-hidden="true">
+                      <span class="footer-bar"></span>
+                      <span class="footer-bar"></span>
+                      <span class="footer-bar"></span>
+                      <span class="footer-bar"></span>
+                    </div>
+                    <div class="page-footer-logo" aria-label="ghost">
+                      <img class="footer-logo-o" src="/assets/footer-o.svg" alt="" width="45" height="46" />
+                      <img class="footer-logo-host" src="/assets/footer-host.svg" alt="" width="162" height="62" />
+                      <img class="footer-logo-underline" src="/assets/footer-underline.svg" alt="" width="34" height="11" />
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

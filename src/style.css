@@ -1,0 +1,614 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* 1440×900 Figma frame */
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: linear-gradient(180deg, rgb(72, 188, 247) 0%, rgb(255, 255, 255) 100%);
+}
+
+/* ---- shared background ---- */
+
+#gradient-wash {
+  position: absolute;
+  left: calc(50% + 2.5vw);
+  top: -0.556vh;
+  width: 105vw;
+  height: 109.667vh;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(220, 236, 232) 0%,
+    rgb(158, 240, 255) 22.159%,
+    rgb(0, 141, 238) 47.596%,
+    rgb(1, 121, 233) 54.326%,
+    rgb(189, 238, 243) 58.065%,
+    rgb(250, 71, 0) 74.824%,
+    rgb(178, 74, 59) 83.209%,
+    rgb(107, 56, 61) 87.566%,
+    rgb(60, 32, 36) 91.517%
+  );
+}
+
+#scanlines {
+  position: absolute;
+  left: calc(50% + 2.5vw);
+  top: calc(50% + 4.556vh);
+  width: 105vw;
+  height: 194.667vh;
+  transform: translate(-50%, -50%);
+  opacity: 0.1;
+  pointer-events: none;
+  object-fit: fill;
+}
+
+/* ---- loading veil ----
+   A solid veil whose own alpha MASK — not the veil's box — does the moving.
+   The mask is a gradient 3x the veil's height (opaque top third, a soft
+   multi-stop eased fade across exactly one viewport-height in the middle,
+   transparent bottom third) with mask-repeat:no-repeat; only mask-position-y
+   moves, 0% -> 100%.
+     - At 0%, the mask's own opaque top third sits over the whole viewport:
+       veil fully covers.
+     - At 100%, the mask has scrolled up two full viewport-heights, so its
+       transparent bottom third now sits over the viewport: veil fully gone.
+     - In between, the viewport sees a slice of the middle band — several
+       intermediate alpha stops (not just two) plus a blur filter, so the
+       boundary reads as a soft, gradually-dissolving edge rather than a
+       defined line.
+   Position is driven from main.js via requestAnimationFrame, writing the
+   SAME computed value to both -webkit-mask-position and mask-position every
+   frame from one source of truth — the earlier CSS-@keyframes version had
+   them animating as two independently-declared properties, which is what
+   caused the "echo": a second, slightly out-of-sync dark layer trailing the
+   first wherever a browser's two masking code paths didn't step in perfect
+   lockstep. Writing both from identical JS state removes that gap entirely. */
+#loading-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: #1a1a1a;
+  filter: blur(18px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 33.333%,
+    rgba(0, 0, 0, 0.92) 39%,
+    rgba(0, 0, 0, 0.72) 45%,
+    rgba(0, 0, 0, 0.46) 51%,
+    rgba(0, 0, 0, 0.22) 58%,
+    rgba(0, 0, 0, 0.06) 63%,
+    transparent 66.667%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 33.333%,
+    rgba(0, 0, 0, 0.92) 39%,
+    rgba(0, 0, 0, 0.72) 45%,
+    rgba(0, 0, 0, 0.46) 51%,
+    rgba(0, 0, 0, 0.22) 58%,
+    rgba(0, 0, 0, 0.06) 63%,
+    transparent 66.667%,
+    transparent 100%
+  );
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 0% 0%;
+  mask-position: 0% 0%;
+}
+
+/* ---- pages ---- */
+
+.page {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+  pointer-events: none;
+}
+
+.page.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ---- side nav ---- */
+
+.side-nav {
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.nav-mark {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.nav-link {
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 2.4px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-link.active {
+  font-weight: 500;
+}
+
+/* ---- tagline ---- */
+
+.tagline {
+  position: absolute;
+  right: 26px;
+  top: 26px;
+  z-index: 10;
+  text-align: right;
+  color: #fff;
+}
+
+.tagline p {
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 2.4px;
+  white-space: nowrap;
+}
+
+/* ---- shared wordmark ----
+   One persistent element for all three pages/states (landing hero, page-2
+   small mark, page-3 pinned mark). main.js computes a per-page target
+   (design-space x, y, native scale) and writes the fully-composed transform
+   string every time the active page changes; the CSS transition below is
+   what makes that a smooth animated move instead of a hard cut. Always
+   position:fixed (not toggled per page) — since #stage already exactly
+   matches the viewport with no scroll of its own on pages 1/2, fixed
+   behaves identically to absolute there, and on page 3 it's what keeps the
+   mark pinned in place while .document-scroll scrolls underneath it. */
+.wordmark {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  display: block;
+  transform-origin: top left;
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+  cursor: pointer;
+}
+
+.wordmark-inner {
+  position: relative;
+  width: 1105.224px;
+  height: 400px;
+}
+
+.wordmark-inner img {
+  display: block;
+}
+
+.logo-host {
+  position: absolute;
+  left: 252.07px;
+  top: 0;
+  width: 853.154px;
+  height: 325.866px;
+}
+
+.logo-o {
+  position: absolute;
+  left: 0;
+  top: 78.4px;
+  width: 235.001px;
+  height: 243.164px;
+}
+
+.logo-underline {
+  position: absolute;
+  left: 129.98px;
+  top: 341.57px;
+  width: 180.225px;
+  height: 58.428px;
+}
+
+/* ---- page 2: headline below the (now-shared) small wordmark ---- */
+
+.hero-center {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 6px); /* matches Figma's text-node anchor exactly */
+  z-index: 4;
+  transform-origin: center center;
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  text-align: center;
+}
+
+.headline-line {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 32px;
+  line-height: 48px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+/* Fires once #page2-headline gets .headline-in (see main.js), timed to start
+   only after the shared wordmark's own page1->page2 transition has settled.
+   Each line is staggered slightly so "computers." follows "builds" up. */
+.headline-in .headline-line {
+  animation: headline-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.headline-in .headline-line:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+@keyframes headline-fade-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- bottom CTA ---- */
+
+.cta {
+  position: absolute;
+  left: 50%;
+  top: 87.444vh; /* 787px */
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.833vw;
+}
+
+.cta-label {
+  font-size: clamp(12px, 0.972vw, 14px);
+  line-height: normal;
+  letter-spacing: 0.146vw;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.return-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.667vh 0.556vw;
+  border: none;
+  background: #fff;
+  font-family: inherit;
+  font-size: clamp(12px, 0.972vw, 14px);
+  line-height: normal;
+  letter-spacing: 0.146vw;
+  text-transform: lowercase;
+  color: #8c8c8c;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.return-key.pressed {
+  transform: scale(0.96);
+  background: #f0f0f0;
+}
+
+/* ---- page 3: scrollable document ---- */
+
+.page-3 {
+  overflow: hidden;
+}
+
+.page-3 .side-nav,
+.page-3 .tagline {
+  position: fixed;
+  z-index: 12;
+}
+
+/* Above the shared .wordmark (z-index 6) so the document panel — which the
+   user scrolls up over the pinned small wordmark on this page — correctly
+   paints on top of it; below page-3's fixed nav/tagline (z-index 12) so
+   those stay visible as a floating overlay while the document scrolls.
+   pointer-events: none on this full-viewport container itself (re-enabled
+   below on .system-panel/.page-footer-outer, the parts that actually paint
+   something) so its invisible bounding box — which spans the whole page
+   regardless of scroll position — doesn't block clicks on the wordmark or
+   anything else wherever there's no real document content drawn on top of
+   it. Wheel/touch scrolling still works normally over the visible content:
+   the hit-tested target is a pointer-events:auto descendant, and the browser
+   chains the scroll up to this, its nearest scrollable ancestor, regardless
+   of this element's own pointer-events value. */
+.document-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.document-track {
+  width: min(720px, calc(100% - 48px));
+  margin: 0 auto;
+  padding-top: 199px;
+}
+
+.system-panel {
+  position: relative;
+  width: 100%;
+  min-height: 1000px;
+  background: #fff;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  pointer-events: auto;
+}
+
+.system-header {
+  position: absolute;
+  left: 41px;
+  top: 36px;
+  right: 41px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.system-id {
+  font-family: "DM Mono", monospace;
+  font-size: 20px;
+  line-height: normal;
+  color: rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+}
+
+.system-dots {
+  display: block;
+  width: 100.2px;
+  height: 20px;
+}
+
+.system-meta {
+  position: absolute;
+  left: 41px;
+  top: 105px;
+  width: 137px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: "DM Mono", monospace;
+  font-size: 12px;
+  line-height: 1.163;
+  color: rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+}
+
+.system-body {
+  position: absolute;
+  inset: 0;
+}
+
+.system-visuals {
+  position: absolute;
+  inset: 0;
+}
+
+.system-markers {
+  position: absolute;
+  left: 41px;
+  top: 195px;
+  display: flex;
+  flex-direction: column;
+  gap: 189px;
+  width: 12px;
+}
+
+.system-markers span {
+  width: 12px;
+  height: 12px;
+  background: #fa4700;
+  flex-shrink: 0;
+}
+
+.illustration {
+  position: absolute;
+  display: block;
+}
+
+.illustration-mainframe {
+  left: 112px;
+  top: 184px;
+  width: 166px;
+  height: 166px;
+}
+
+.illustration-desktop {
+  left: 111px;
+  top: 379px;
+  width: 184px;
+  height: 184px;
+}
+
+.illustration-modern {
+  left: 97px;
+  top: 581px;
+  width: 204px;
+  height: 204px;
+}
+
+.illustration-laptop {
+  left: 124px;
+  top: 794px;
+  width: 142.448px;
+  height: 146px;
+}
+
+.system-copy {
+  position: absolute;
+  left: 372px;
+  top: 123px;
+  width: 286px;
+  font-size: 16px;
+  line-height: normal;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.system-copy p {
+  margin-bottom: 1em;
+}
+
+.system-copy p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- page 3 footer ---- */
+
+.page-footer-outer {
+  margin: 48px auto 0;
+  pointer-events: auto;
+}
+
+.page-footer-shell {
+  width: 1440px;
+  transform-origin: top left;
+}
+
+.page-footer {
+  position: relative;
+  width: 1440px;
+  min-height: 849px;
+  overflow: hidden;
+  box-shadow: 0 -4px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-footer-bg {
+  position: absolute;
+  left: -132px;
+  top: -165px;
+  width: 1572px;
+  bottom: 0;
+  min-height: 1049px;
+  pointer-events: none;
+}
+
+.page-footer-bg img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: top center;
+  pointer-events: none;
+}
+
+.page-footer-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1440px;
+  height: 849px;
+}
+
+.page-footer-bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.footer-bar {
+  position: absolute;
+  top: 748px;
+  width: 195px;
+  height: 35px;
+  background: #d9d9d9;
+}
+
+.footer-bar:nth-child(1) {
+  left: 34px;
+}
+
+.footer-bar:nth-child(2) {
+  left: 318px;
+}
+
+.footer-bar:nth-child(3) {
+  left: 920px;
+}
+
+.footer-bar:nth-child(4) {
+  left: 1203px;
+}
+
+.page-footer-logo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.footer-logo-host {
+  position: absolute;
+  left: 1233.89px;
+  top: 592px;
+  width: 162.097px;
+  height: 61.913px;
+}
+
+.footer-logo-o {
+  position: absolute;
+  left: 1186px;
+  top: 606.9px;
+  width: 44.65px;
+  height: 46.2px;
+}
+
+.footer-logo-underline {
+  position: absolute;
+  left: 1210.7px;
+  top: 656.9px;
+  width: 34.242px;
+  height: 11.101px;
+}
