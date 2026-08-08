@@ -45,8 +45,11 @@ function viewportScale() {
   return Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
 }
 
+// No upper cap: the silver footer scales to cover the full viewport width even
+// on displays wider than the 1440 design frame, so it reads as a full-screen
+// wall rather than a centered 1440 panel.
 function footerScale() {
-  return Math.min(window.innerWidth / DESIGN_W, 1);
+  return window.innerWidth / DESIGN_W;
 }
 
 function footerLayoutHeight() {
@@ -70,6 +73,9 @@ function updateFooterScale() {
 
   if (footer) {
     footer.style.height = `${layoutH}px`;
+    // Override the CSS min-height so a short layoutH (wide viewports) can't
+    // clamp the footer taller than the viewport.
+    footer.style.minHeight = `${layoutH}px`;
   }
 }
 
@@ -167,6 +173,10 @@ function setPage(pageNumber) {
   document.body.dataset.page = String(pageNumber);
   animateWordmark(pageNumber);
   animatePaper(pageNumber);
+
+  // Reset the wordmark to above the paper on any page change; the page-3 scroll
+  // listener re-drops it behind once the manifesto is actually scrolled.
+  wordmark?.classList.remove("behind-paper");
 
   if (pageNumber === 3) {
     documentScroll?.scrollTo(0, 0);
@@ -439,3 +449,12 @@ window.addEventListener(
   },
   { passive: false }
 );
+
+// As soon as the page-3 manifesto is scrolled off the top, drop the pinned
+// wordmark behind the paper so it's hidden as the document slides up over it;
+// back at the top it sits above the paper again.
+if (documentScroll && wordmark) {
+  documentScroll.addEventListener("scroll", () => {
+    wordmark.classList.toggle("behind-paper", documentScroll.scrollTop > 0);
+  });
+}

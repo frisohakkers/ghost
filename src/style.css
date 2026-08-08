@@ -183,10 +183,15 @@ body {
 }
 
 /* ---- top bar ----
-   Full-width header row anchored to the top of the stage: nav pinned left,
-   tagline pinned right, the two vertically centered against each other
+   Full-width header row anchored to the stage's vertical center: nav pinned
+   left, tagline pinned right, the two vertically centered against each other
    (align-items: center) so the short 2-line tagline sits at the vertical
-   middle of the taller nav column. */
+   middle of the taller nav column.
+   pointer-events:none on the bar itself is essential — it spans the full width
+   across the middle of the viewport, so if it were hit-testable its empty
+   center would swallow wheel events over the page-3 manifesto (which lives in a
+   separate scroll container) and block scrolling. Only the actual nav re-enables
+   pointer events. */
 .top-bar {
   position: absolute;
   top: 50%;
@@ -197,6 +202,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  pointer-events: none;
 }
 
 /* ---- side nav ---- */
@@ -206,6 +212,7 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
+  pointer-events: auto;
 }
 
 .nav-mark {
@@ -286,6 +293,15 @@ body {
   display: block;
   transform-origin: top left;
   cursor: pointer;
+}
+
+/* Once the page-3 manifesto is scrolled at all, the pinned wordmark drops below
+   the paper (z-index 8) so the document slides up over it and it disappears
+   from the top. At scrollTop 0 — which includes the entire paper-rise entrance,
+   the only time the logo passes through the paper's vertical zone — it stays
+   above (z-index 9) and visible. Toggled from main.js. */
+.wordmark.behind-paper {
+  z-index: 7;
 }
 
 .wordmark-inner {
@@ -586,6 +602,7 @@ body {
 /* ---- page 3 footer ---- */
 
 .page-footer-outer {
+  position: relative;
   margin: 48px auto 0;
   pointer-events: auto;
 }
@@ -633,62 +650,69 @@ body {
   height: 849px;
 }
 
-.page-footer-bars {
+/* ---- footer meta row ----
+   Legal + social line pinned low across the bottom of the silver wall: brand at
+   the far left, links (legal, then socials) at the far right. Lives in the
+   unscaled .page-footer-outer (full viewport), pinned to the SAME 26px margins
+   as the top-bar so it aligns with the nav (left) and tagline (right), and
+   renders at the identical unscaled 16px / 2.4px tracking as the tagline. */
+.page-footer-meta {
   position: absolute;
-  inset: 0;
+  left: 26px;
+  right: 26px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 2.4px;
+  text-transform: lowercase;
+  color: #fff;
+}
+
+.footer-brand {
+  white-space: nowrap;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  pointer-events: auto;
+}
+
+.footer-links a {
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.footer-links a:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Extra space before the socials so they read as their own group. */
+.footer-links-social {
+  margin-left: 24px;
+}
+
+/* ---- embossed ghost logo ----
+   The wordmark carved into the brushed-metal wall, lower-right. The relief is
+   baked into ghost-embossed.svg itself via an SVG lighting filter (blur the
+   glyph alpha into a height map, then feSpecularLighting for the lit lower rim,
+   an inner shadow for the dark upper rim, and a faint interior recess), so the
+   wall shows through the letters and only the bevelled edges are shaded — a real
+   engraving rather than crude CSS drop-shadows. Here we just place and size it.
+   The SVG is the exact wordmark from the Figma source (node 978:10323). */
+.footer-engraved {
+  position: absolute;
+  right: 40px;
+  top: 520px;
+  width: 380px;
+  height: auto;
+  display: block;
   pointer-events: none;
-}
-
-.footer-bar {
-  position: absolute;
-  top: 748px;
-  width: 195px;
-  height: 35px;
-  background: #d9d9d9;
-}
-
-.footer-bar:nth-child(1) {
-  left: 34px;
-}
-
-.footer-bar:nth-child(2) {
-  left: 318px;
-}
-
-.footer-bar:nth-child(3) {
-  left: 920px;
-}
-
-.footer-bar:nth-child(4) {
-  left: 1203px;
-}
-
-.page-footer-logo {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.footer-logo-host {
-  position: absolute;
-  left: 1233.89px;
-  top: 592px;
-  width: 162.097px;
-  height: 61.913px;
-}
-
-.footer-logo-o {
-  position: absolute;
-  left: 1186px;
-  top: 606.9px;
-  width: 44.65px;
-  height: 46.2px;
-}
-
-.footer-logo-underline {
-  position: absolute;
-  left: 1210.7px;
-  top: 656.9px;
-  width: 34.242px;
-  height: 11.101px;
 }
