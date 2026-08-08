@@ -51,16 +51,59 @@ body {
   );
 }
 
+/* The static textured SVG is hidden: its dark/tinted lines didn't align with
+   the animated CSS scanlines below, so the two layers overlapped as lines of
+   different colors. The uniform white #stage::after overlay is now the sole
+   scanline layer. */
 #scanlines {
+  display: none;
+}
+
+/* ---- animated CRT scanlines ----
+   A crisp repeating line pattern layered over the whole stage as a fixed
+   "glass" overlay, rolling endlessly from BOTTOM to TOP (background-position-y
+   decreases → the pattern climbs). The pattern period is 4px. Each 1s cycle
+   travels a whole -40px (10 periods) so the loop restart is seamless, but at
+   85% of the cycle a 2px (half-period) discontinuity plus a fast catch-up
+   lurch produce a small vertical "jump" once per second — a CRT vertical-hold
+   hiccup. Sits above all page content (z-index 900) but below the loading
+   veil (z-index 999), and never intercepts input. */
+#stage::after {
+  content: "";
   position: absolute;
-  left: calc(50% + 2.5vw);
-  top: calc(50% + 4.556vh);
-  width: 105vw;
-  height: 194.667vh;
-  transform: translate(-50%, -50%);
-  opacity: 0.1;
+  inset: 0;
+  z-index: 900;
   pointer-events: none;
-  object-fit: fill;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.14) 0px,
+    rgba(255, 255, 255, 0.14) 5px,
+    rgba(255, 255, 255, 0) 5px,
+    rgba(255, 255, 255, 0) 14px
+  );
+  animation: scanline-roll 1s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes scanline-roll {
+  0% {
+    background-position-y: 0px;
+  }
+  88% {
+    background-position-y: -10px;
+  }
+  88.01% {
+    background-position-y: -11px; /* small 1px phase nudge */
+  }
+  100% {
+    background-position-y: -14px; /* gentle catch-up; -14 = 1 whole 14px period → seamless */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #stage::after {
+    animation: none;
+  }
 }
 
 /* ---- loading veil ----
@@ -139,13 +182,26 @@ body {
   pointer-events: auto;
 }
 
+/* ---- top bar ----
+   Full-width header row anchored to the top of the stage: nav pinned left,
+   tagline pinned right, the two vertically centered against each other
+   (align-items: center) so the short 2-line tagline sits at the vertical
+   middle of the taller nav column. */
+.top-bar {
+  position: absolute;
+  top: 50%;
+  left: 26px;
+  right: 26px;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 /* ---- side nav ---- */
 
 .side-nav {
-  position: absolute;
-  left: 26px;
-  top: 26px;
-  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -174,13 +230,31 @@ body {
   font-weight: 500;
 }
 
+/* ---- hero typewriter caret ----
+   A thin blinking bar shown at the end of whichever line is currently being
+   typed (see runHeroType in main.js). Removed the moment the line finishes,
+   so it never lingers. min-height keeps an empty, not-yet-typed line from
+   collapsing before its turn. */
+.typing::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  background: currentColor;
+  vertical-align: -0.15em;
+  animation: caret-blink 0.8s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 /* ---- tagline ---- */
 
 .tagline {
-  position: absolute;
-  right: 26px;
-  top: 26px;
-  z-index: 10;
   text-align: right;
   color: #fff;
 }
@@ -202,14 +276,15 @@ body {
    matches the viewport with no scroll of its own on pages 1/2, fixed
    behaves identically to absolute there, and on page 3 it's what keeps the
    mark pinned in place while .document-scroll scrolls underneath it. */
+/* Transform is driven entirely by Motion (Framer Motion) from main.js — no CSS
+   transition here, or it would fight the spring. */
 .wordmark {
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 6;
+  z-index: 9;
   display: block;
   transform-origin: top left;
-  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   cursor: pointer;
 }
 
@@ -342,16 +417,15 @@ body {
   overflow: hidden;
 }
 
-.page-3 .side-nav,
-.page-3 .tagline {
+.page-3 .top-bar {
   position: fixed;
   z-index: 12;
 }
 
-/* Above the shared .wordmark (z-index 6) so the document panel — which the
-   user scrolls up over the pinned small wordmark on this page — correctly
-   paints on top of it; below page-3's fixed nav/tagline (z-index 12) so
-   those stay visible as a floating overlay while the document scrolls.
+/* Sits below the shared .wordmark (z-index 9) so the pinned small logo always
+   stays visible on top of the paper as it rises and as the document scrolls;
+   below page-3's fixed nav/tagline (z-index 12) so those stay visible as a
+   floating overlay while the document scrolls.
    pointer-events: none on this full-viewport container itself (re-enabled
    below on .system-panel/.page-footer-outer, the parts that actually paint
    something) so its invisible bounding box — which spans the whole page
@@ -369,6 +443,12 @@ body {
   -webkit-overflow-scrolling: touch;
   z-index: 8;
   pointer-events: none;
+  /* Parked off-screen below the viewport as the initial state; from here on its
+     translateY is driven by Motion (Framer Motion) from main.js — it springs up
+     on entering page 3 and eases down on leaving. The shared wordmark sits above
+     the paper (z-index 9 > 8), so the logo stays on top of it the whole time,
+     both in and out. */
+  transform: translateY(100%);
 }
 
 .document-track {
